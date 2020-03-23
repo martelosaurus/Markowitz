@@ -73,6 +73,7 @@ if False:
 	print(X.mean())
 
 # value of diversification
+# this should go to another module
 if False:
 	X = W.cov().to_numpy()
 	portvar = []
