@@ -58,7 +58,7 @@ W = pd.read_csv('canvas_wide.csv')
 # betas
 def betafun(ticker):
     stats, beta, sharpe = beta_plots.beta_plots(D.loc[D['ticker']==ticker,['mkt','ret','rf']])
-    return sharpe
+    return stats, beta, sharpe
 
 # histogram
 if False:
