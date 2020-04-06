@@ -49,8 +49,11 @@ D = cleaning.round_columns(D)
 portfolio1 = twostock.TwoStocks(D,'AAPL','PG',n=1000)
 portfolio2 = twostock.TwoStocks(D,'CVX','XOM',n=1000)
 portfolio3 = twostock.TwoStocks(D,'AAPL','MSFT',n=1000)
-print(portfolio3.summary())
+portfolio4 = twostock.TwoStocks(D,'WBA','WMT',n=1000)
 #portfolio2 = portfolio.Portfolio(D,['AAPL','PG'],.5])
+x = portfolio4.summary()
+z = pd.DataFrame({'stat' : list(x.keys()), 'val' : list(x.values())})
+z.to_csv('exam2_stats.csv',index=False)
 
 # load wide 
 W = pd.read_csv('canvas_wide.csv')
@@ -58,6 +61,7 @@ W = pd.read_csv('canvas_wide.csv')
 # betas
 def betafun(ticker):
     stats, beta, sharpe = beta_plots.beta_plots(D.loc[D['ticker']==ticker,['mkt','ret','rf']])
+    print(D.loc[D['ticker']==ticker,['date','mkt','ret','rf']])
     return stats, beta, sharpe
 
 # histogram
