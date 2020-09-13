@@ -85,11 +85,6 @@ class TwoStocks:
 		self.mean_tan = self.mean1*self.x1_star+self.mean2*self.x2_star
 		self.stdv_tan = np.sqrt((self.x1_star**2.)*self.var1+(self.x2_star**2.)*self.var2+2.*self.x1_star*self.x2_star*self.cov12)
 
-		# regress stock2 on stock1
-		self.beta = self.cov12/self.var1
-		self.alpha = self.mean2-self.beta*self.mean1  
-		self.rsqr = (self.beta**2.)*self.var1/self.var2
-
 	def summary(self):
 		return {
 			'mean1' : np.round(100.*self.mean1,4),
@@ -107,20 +102,6 @@ class TwoStocks:
 
 	def cov(self):
 		return self.portfolio.cov()
-
-	def to_html(self,fn):
-		"""
-		self.Drops an html table using panda's self.Data.Frame.to_html method
-		"""
-			
-		self.portfolio.to_html(fn,index=False)
-
-	def to_latex(self,file_name):
-		"""
-		self.Drops an TeX table using panda's self.Data.Frame.to_html method
-
-		"""
-		self.portfolio.to_latex(fn,index=False)
 
 	def risk_return_plot(self,n_plot=1000,sml=True,cml=True,sys_ido=True,frontier=True,vertical=False):
 		"""
@@ -152,7 +133,6 @@ class TwoStocks:
 			plt.plot(0,0,linewidth=3,color='tab:green')
 		if frontier:
 			leg.append('Efficient Frontier')
-			print(len(stdv_p[(mean_p>min_mean_p)]))
 			I = mean_p>min_mean_p
 			plt.plot(np.round(100.*stdv_p,2),np.round(100.*mean_p,2),'--',color='tab:blue',linewidth=3)
 			plt.plot(np.round(100.*stdv_p[I],2),np.round(100.*mean_p[I],2),'-',color='tab:blue',linewidth=3)

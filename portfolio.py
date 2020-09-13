@@ -59,32 +59,6 @@ class Portfolio:
 	def frontier(mu_port,efficient=False):
 		return sigma, x_star
 
-	def cov(self):
-		return self.portfolio.cov()
-
-	def to_html(self,fn):
-		"""
-		Drops an html table using panda's self.Data.Frame.to_html method
-
-		Parameters
-		----------
-		file_name : str
-			Name of the latex file
-		"""
-			
-		self.portfolio.to_html(fn,index=False)
-
-	def to_latex(self,file_name):
-		"""
-		Drops an TeX table using panda's self.Data.Frame.to_html method
-
-		Parameters
-		----------
-		file_name : str
-			Name of the latex file
-		"""
-		self.portfolio.to_latex(fn,index=False)
-
 	def risk_return_plot(self,n_plot=100,cml=True,cal=True,sys_ido=True,
 		efficient_frontier=True):
 		"""
@@ -126,7 +100,7 @@ class Portfolio:
 
 	def capm_scatter(self):
 		"""
-		Scatter plot of two stocks or a stock and the market
+		Scatter plot of stock and market
 		"""
 		pf = np.polyfit(dat1,dat2,1)
 		plt.plot(dat1,dat2,'o')

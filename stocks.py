@@ -67,37 +67,6 @@ def betafun(ticker):
 def beta_plots(df):
 	cov = df.cov()
 	corr = df.corr()
-	std = df.std()
-	avg = df.mean()
-	stats = {
-		'rf_rtrn' : avg['rf'],
-		'mkt_rtrn' : avg['mkt'],
-		'ret_rtrn' : avg['ret'],
-		'mkt_risk' : std['mkt'],
-		'ret_risk' : std['ret'],
-		'ret_mkt_cov' : cov.loc['ret','mkt'],
-		'ret_mkt_corr' : corr.loc['ret','mkt'],
-	} 
-	beta = {
-		'beta' : stats['ret_mkt_cov']/stats['mkt_risk']**2.
-	}
-	perf = {
-		'mkt_sharpe' : (stats['mkt_rtrn']-stats['rf_rtrn'])/stats['mkt_risk'])
-		'ret_sharpe' : (stats['ret_rtrn']-stats['rf_rtrn'])/stats['ret_risk'])
-		'ret_prem' : 100.*(stats['ret_rtrn']-stats['rf_rtrn']))
-		'mkt_prem' : 100.*(stats['mkt_rtrn']-stats['rf_rtrn'])
-	}
-	stats = {	
-		'rf_rtrn' : 100.*avg['rf'])
-		'mkt_rtrn' : 100.*avg['mkt'])
-		'ret_rtrn' : 100.*avg['ret'])
-		'mkt_risk' : 100.*std['mkt'])
-		'ret_risk' : 100.*std['ret'])
-		'ret_mkt_corr' : corr.loc['ret','mkt'])
-	}
-	beta['alpha'] = perf['ret_prem']-beta['beta']*perf['mkt_prem']
-
-	return stats, beta, perf
 	
 # histogram
 if False:
