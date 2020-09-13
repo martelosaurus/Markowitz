@@ -87,17 +87,17 @@ class TwoStocks:
 
 	def summary(self):
 		return {
-			'mean1' : np.round(100.*self.mean1,4),
-			'mean2' : np.round(100.*self.mean2,4),
-			'stdv1' : np.round(100.*self.stdv1,4),
-			'stdv2' : np.round(100.*self.stdv2,4),
-			'corr' : np.round(self.corr,4),
-			'mean_p' : np.round(100.*self.mean_p,4),
-			'stdv_p' : np.round(100.*self.stdv_p,4),
-			'sr_p' : np.round(self.mean_p/self.stdv_p,4),
-			'sr_tan' : np.round(self.mean_tan/self.stdv_tan,4),
-			'x1_tan' : np.round(100.*self.x1_star,4),
-			'x2_tan' : np.round(100.*self.x2_star,4)
+			'mean1' 	: 	np.round(100.*self.mean1,4),
+			'mean2' 	: 	np.round(100.*self.mean2,4),
+			'stdv1' 	: 	np.round(100.*self.stdv1,4),
+			'stdv2' 	: 	np.round(100.*self.stdv2,4),
+			'corr' 		: 	np.round(self.corr,4),
+			'mean_p' 	: 	np.round(100.*self.mean_p,4),
+			'stdv_p' 	: 	np.round(100.*self.stdv_p,4),
+			'sr_p'		: 	np.round(self.mean_p/self.stdv_p,4),
+			'sr_tan' 	: 	np.round(self.mean_tan/self.stdv_tan,4),
+			'x1_tan' 	: 	np.round(100.*self.x1_star,4),
+			'x2_tan' 	: 	np.round(100.*self.x2_star,4)
 		}
 
 	def cov(self):
