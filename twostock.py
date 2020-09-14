@@ -41,45 +41,33 @@ class TwoStocks:
 
         # load data
         ts = TimeSeries(key, output_format = "pandas")
-        self.stock1 = ts.get_monthly_adjusted(ticker1)[0]
-        self.stock2 = ts.get_monthly_adjusted(ticker2)[0]
 
-        # call the API with symbol=ticker
-        tick_dat, _ = ts.get_monthly_adjusted(symbol=ticker)
+        self.fund_data = []
+        for ticker in [ticker1, ticker2]:
 
-        # old and new columns
-        old_cols = ['5. adjusted close','7. dividend amount']
-        new_cols = [ticker + '_PRC', ticker + '_DIV']
+            tick_dat, _ = ts.get_monthly_adjusted(symbol=ticker)
 
-        # select tick data
-        tick_dat = tick_dat[old_cols]
-        col_dict = dict(zip(old_cols,new_cols))
-        tick_dat = tick_dat.rename(columns=col_dict)
+            # old and new columns
+            old_cols = ['5. adjusted close','7. dividend amount']
+            new_cols = [ticker + '_PRC', ticker + '_DIV']
 
-        # meger to fund_data list
-        opts = {'left_index' : True, 'right_index' : True}
-        fund_data = fund_data.merge(tick_dat,**opts)
+            # select tick data
+            tick_dat = tick_dat[old_cols]
+            col_dict = dict(zip(old_cols,new_cols))
+            tick_dat = tick_dat.rename(columns=col_dict)
 
-        # load Fama French factors
-        ff = pd.read_csv('famafrench.csv')
-        ff.index = tuple(zip(ff.Date//100,ff.Date%100))
+            # meger to fund_data list
+            opts = {'left_index' : True, 'right_index' : True}
+            #fund_data = fund_data.merge(tick_dat,**opts)
+            self.fund_data.append(tick_dat)
 
-        # TODO: check this out - want same index as for FF for merge
-        self.X['Date'] = self.X.date.apply(date_fix)
-        self.X.index = tuple(zip(self.X.Date//100,self.X.Date%100))
-    
         # compute returns
-        self.tickers = [x[:-4] for x in self.X.columns[1:] if x.endswith('_PRC')]
-        for t in self.tickers:
-            self.X[t+'_RET'] = (self.X[t+'_PRC']+self.X[t+'_DIV'])/self.X[t+'_PRC'].shift()-1.
+        #self.tickers = [x[:-4] for x in self.X.columns[1:] if x.endswith('_PRC')]
+        #for t in self.tickers:
+            #self.X[t+'_RET'] = (self.X[t+'_PRC']+self.X[t+'_DIV'])/self.X[t+'_PRC'].shift()-1.
 
         # kill the first row (with the NAs)
-        self.X = self.X.loc[self.X.index[1:],]
-
-        # merge-in FF data
-        self.X = pd.merge(self.X,ff,left_index=True,right_index=True)
-        self.X['Mkt'] = self.X['Mkt-RF']+self.X['RF']
-        self.X[['Mkt','RF','Mkt-RF']] /= 100.
+        #self.X = self.X.loc[self.X.index[1:],]
 
         #---------------------------------------------
 
@@ -88,51 +76,51 @@ class TwoStocks:
         self.col2 = self.ticker2 + ' Return'
         
         # format and merge
-        self.portfolio = pd.merge(self.stock1,self.stock2)
-        self.portfolio['Portfolio Return'] = (x1*self.portfolio[self.col1]
-                +(1.-x1)*self.portfolio[self.col2])
-
-        ## asic statistics
-        self.mean1 = float(self.stock1.mean())
-        self.mean2 = float(self.stock2.mean())
-        self.stdv1 = float(self.stock1.std())
-        self.stdv2 = float(self.stock2.std())
-        self.cov12 = float(self.portfolio.cov().loc[self.col1,self.col2])
-        self.var1 = self.stdv1**2.
-        self.var2 = self.stdv2**2.
-        self.mean_p = x1*self.mean1+(1.-x1)*self.mean2
-        T1 = self.var1*x1**2.
-        T2 = self.var2*(1.-x1)**2.
-        T3 = 2.*x1*(1.-x1)*self.cov12
-        self.stdv_p = np.sqrt(T1+T2+T3)
-        self.corr = self.cov12/(self.stdv1*self.stdv2)
-        self.sr1 = self.mean1/self.stdv1        
-        self.sr2 = self.mean2/self.stdv2
-
-        # portfolio object
-        x1_tilde = self.stdv2*(self.sr1-self.sr2*self.corr)
-        x2_tilde = self.stdv1*(self.sr2-self.sr1*self.corr)
-        self.x1_star = x1_tilde/(x1_tilde+x2_tilde)
-        self.x2_star = x2_tilde/(x1_tilde+x2_tilde)
-
-        # tangency
-        self.mean_tan = self.mean1*self.x1_star+self.mean2*self.x2_star
-        self.stdv_tan = np.sqrt((self.x1_star**2.)*self.var1+(self.x2_star**2.)*self.var2+2.*self.x1_star*self.x2_star*self.cov12)
-
-    def __str__(self):
-        return str({
-            'mean1'     :   np.round(100.*self.mean1,4),
-            'mean2'     :   np.round(100.*self.mean2,4),
-            'stdv1'     :   np.round(100.*self.stdv1,4),
-            'stdv2'     :   np.round(100.*self.stdv2,4),
-            'corr'      :   np.round(self.corr,4),
-            'mean_p'    :   np.round(100.*self.mean_p,4),
-            'stdv_p'    :   np.round(100.*self.stdv_p,4),
-            'sr_p'      :   np.round(self.mean_p/self.stdv_p,4),
-            'sr_tan'    :   np.round(self.mean_tan/self.stdv_tan,4),
-            'x1_tan'    :   np.round(100.*self.x1_star,4),
-            'x2_tan'    :   np.round(100.*self.x2_star,4)
-        })
+        #self.portfolio = pd.merge(self.stock1,self.stock2)
+        #self.portfolio['Portfolio Return'] = (x1*self.portfolio[self.col1]
+                #+(1.-x1)*self.portfolio[self.col2])
+#
+        ### asic statistics
+        #self.mean1 = float(self.stock1.mean())
+        #self.mean2 = float(self.stock2.mean())
+        #self.stdv1 = float(self.stock1.std())
+        #self.stdv2 = float(self.stock2.std())
+        #self.cov12 = float(self.portfolio.cov().loc[self.col1,self.col2])
+        #self.var1 = self.stdv1**2.
+        #self.var2 = self.stdv2**2.
+        #self.mean_p = x1*self.mean1+(1.-x1)*self.mean2
+        #T1 = self.var1*x1**2.
+        #T2 = self.var2*(1.-x1)**2.
+        #T3 = 2.*x1*(1.-x1)*self.cov12
+        #self.stdv_p = np.sqrt(T1+T2+T3)
+        #self.corr = self.cov12/(self.stdv1*self.stdv2)
+        #self.sr1 = self.mean1/self.stdv1        
+        #self.sr2 = self.mean2/self.stdv2
+#
+        ## portfolio object
+        #x1_tilde = self.stdv2*(self.sr1-self.sr2*self.corr)
+        #x2_tilde = self.stdv1*(self.sr2-self.sr1*self.corr)
+        #self.x1_star = x1_tilde/(x1_tilde+x2_tilde)
+        #self.x2_star = x2_tilde/(x1_tilde+x2_tilde)
+#
+        ## tangency
+        #self.mean_tan = self.mean1*self.x1_star+self.mean2*self.x2_star
+        #self.stdv_tan = np.sqrt((self.x1_star**2.)*self.var1+(self.x2_star**2.)*self.var2+2.*self.x1_star*self.x2_star*self.cov12)
+#
+    #def __str__(self):
+        #return str({
+            #'mean1'     :   np.round(100.*self.mean1,4),
+            #'mean2'     :   np.round(100.*self.mean2,4),
+            #'stdv1'     :   np.round(100.*self.stdv1,4),
+            #'stdv2'     :   np.round(100.*self.stdv2,4),
+            #'corr'      :   np.round(self.corr,4),
+            #'mean_p'    :   np.round(100.*self.mean_p,4),
+            #'stdv_p'    :   np.round(100.*self.stdv_p,4),
+            #'sr_p'      :   np.round(self.mean_p/self.stdv_p,4),
+            #'sr_tan'    :   np.round(self.mean_tan/self.stdv_tan,4),
+            #'x1_tan'    :   np.round(100.*self.x1_star,4),
+            #'x2_tan'    :   np.round(100.*self.x2_star,4)
+        #})
 #
     #def risk_return_plot(self,n_plot=1000,sml=True,cml=True,sys_ido=True,frontier=True,vertical=False):
         #"""
