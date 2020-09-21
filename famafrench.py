@@ -6,11 +6,12 @@ from matplotlib import pyplot as plt
 from datetime import date
 from zipfile import ZipFile
 
-# file name and url
+# ------------------------------------------------------------------------------
 _french_csv = "F-F_Research_Data_Factors.CSV"
 _french_zip = "F-F_Research_Data_Factors_CSV.zip"
 _french_url = "http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
 
+# ------------------------------------------------------------------------------
 def download_zip(url, save_path, chunk_size=128):
     """wrapper from 'requests' documentation"""
     r = requests.get(url, stream=True)
@@ -24,6 +25,7 @@ def column_maid(row):
 	except:
 		return np.nan
 
+# ------------------------------------------------------------------------------
 class FamaFrench:
 
 	def __init__(self,start='192607',end=None):
@@ -44,7 +46,12 @@ class FamaFrench:
 			# load/clean Fama French
 			try: 
 				# TODO this is slow, but I can't replicate with pd.read_csv
-				self.X = pd.read_csv( _french_csv, header=2, index_col=0, converters = {0 : column_maid})
+				self.X = pd.read_csv(
+					_french_csv,
+					header=2,
+					index_col=0,
+					converters = {0 : column_maid}
+				)
 				#self.X.rename(columns={'Unnamed: 0' : 'date'})
 			except:
 				raise Exception("Couldn't load/clean " + ff_file_name)

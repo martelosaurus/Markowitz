@@ -126,7 +126,14 @@ class TwoStocks:
             'x2_tan'    :   rnd(self.x2_star,4)
         })
 
-    def risk_return_plot(self,n_plot=1000,sml=True,cml=True,sys_ido=True,frontier=True,vertical=False):
+    def risk_return_plot(self,
+		n_plot=1000,
+		sml=True,
+		cml=True,
+		sys_ido=True,
+		frontier=True,
+		vertical=False
+	):
         """
         Under construction
         
