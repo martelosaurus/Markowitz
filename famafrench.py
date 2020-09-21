@@ -1,39 +1,71 @@
 import requests
+from os import listdir
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from datetime import date
+from zipfile import ZipFile
 
 # file name and url
-ff_file_name = "F-F_Research_Data_Factors.CSV"
-ff_url = "http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
+_french_csv = "F-F_Research_Data_Factors.CSV"
+_french_zip = "F-F_Research_Data_Factors_CSV.zip"
+_french_url = "http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
+
+def download_zip(url, save_path, chunk_size=128):
+    """wrapper from 'requests' documentation"""
+    r = requests.get(url, stream=True)
+    with open(save_path, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            fd.write(chunk)
+
+def column_maid(row):
+	try:
+		return np.int64(row)
+	except:
+		return np.nan
 
 class FamaFrench:
 
-	def __init__(self,start='200909',end=None):
+	def __init__(self,start='192607',end=None):
 
-		# look for Fama French (and download if not found)
-		if ff_file_name is not in os.listdir():
-			print(ff_file_name + " not found: downloading from internet")
+		# Fama French file name
+		today = date.today().__str__().replace('-','')[:6]
+		ff_file_name = "fama-french-" + today
+
+		# look for Fama French (and download if not found or stale)
+		if ff_file_name not in listdir():
+			print(ff_file_name + " not found: downloading from internet...")
 			try: 
-				r = requests.get(url)
+				download_zip(_french_url+_french_zip,_french_zip)
+				ZipFile(_french_zip).extract(_french_csv)
 			except:
-				raise Exception("Couldn't download " + ff_file_name)
+				raise Exception("Couldn't download or unzip " + ff_file_name)
 
-		# load/clean Fama French
-		try: 
-			X = pd.read_csv(ff_file_name,header=2)
-			X.rename(columns={'Unnamed: 0' : 'date'})
-		except:
-			raise Exception("Couldn't load/clean " + ff_file_name)
-
+			# load/clean Fama French
+			try: 
+				# TODO this is slow, but I can't replicate with pd.read_csv
+				self.X = pd.read_csv( _french_csv, header=2, index_col=0, converters = {0 : column_maid})
+				#self.X.rename(columns={'Unnamed: 0' : 'date'})
+			except:
+				raise Exception("Couldn't load/clean " + ff_file_name)
+		# if found and not stale, load
+		else:
+			try:
+				self.X = pd.read_csv(ff_file_name,header=2,index_col=1)
+			except:
+				raise Exception("Existing file not formatted correctly")
 
 	def __str__(self):
+		self.X
 		pass
 
-	def get(self):
+	def get(self,start='',end=None):
 		"""
 		return data.frame
 		"""
+		return X
 
-	def plot(self):
+	def plot(self,mktrf=True,smb=True,hml=True,start='',end=None):
 		pass
+
+FF = FamaFrench()
