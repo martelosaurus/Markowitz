@@ -49,8 +49,7 @@ class TwoStocks:
         # load data
         ts = TimeSeries(key, output_format = "pandas")
 
-        #X = FamaFrench().get(start,end)
-        X = pd.read_csv('trash.csv',index_col=0)
+        X = FamaFrench().get_monthly()
 
         # loop over tickers
         for ticker in [ticker1, ticker2]:
@@ -67,7 +66,7 @@ class TwoStocks:
             col_dict = dict(zip(old_cols,new_cols))
             tick_dat = tick_dat.rename(columns=col_dict)
 
-			# reformat date
+            # reformat date
             tick_dat.index = 100*tick_dat.index.year+tick_dat.index.month
 
             # meger to X list
