@@ -1,5 +1,5 @@
 import requests
-from os import listdir
+from os import listdir, remove
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -60,6 +60,8 @@ class FamaFrench:
             _converters[0] = _to_int
 
             try: 
+
+                # load
                 self.X = pd.read_csv(
                     _french_csv,
                     header=2,
@@ -67,7 +69,10 @@ class FamaFrench:
                     converters = _converters
                 )
 
+                # clean-up
                 self.X = self.X.dropna()
+                remove(_french_csv)
+                remove(_french_zip)
 
             except:
                 raise Exception("Couldn't load/clean " + ff_file_name)
