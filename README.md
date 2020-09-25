@@ -1,5 +1,5 @@
 # Markowitz
-Implements Markowitz portfolio theory (for educational purposes). Currenlty only considers two stock portfolios.
+Implements Markowitz portfolio theory (for educational purposes). **Requires an Alpha Vantage API key.** Currenlty only considers two stock portfolios.
 
 ```python
 portfolio1 = twostock.TwoStocks(D,'AAPL','PG',n=1000)
