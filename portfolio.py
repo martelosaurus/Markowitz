@@ -11,7 +11,7 @@ font = {'family' : 'normal', 'size' : 12}
 
 class Portfolio:
 
-    def __init__(self,key,x,tickers,dow=False):
+    def __init__(self,key,tickers,dow=False):
         """
         Initializes Portfolio object
 
@@ -30,8 +30,8 @@ class Portfolio:
         """     
 
         # fix weights
-        x = np.array(x)
-        x = x/x.sum()
+        #x = np.array(x)
+        #x = x/x.sum()
 
         # load tickers
         if dow:
@@ -65,7 +65,7 @@ class Portfolio:
             X = X.merge(tick_dat,**opts)
 
         # compute returns
-        for t in [ticker1, ticker2]:
+        for t in tickers:
             X[t+'_RET'] = (X[t+'_PRC']+X[t+'_DIV'])/X[t+'_PRC'].shift()-1.
 
         # kill the first row (with the NAs)
@@ -74,24 +74,30 @@ class Portfolio:
         # store
         self.X = X
 
-        #---------------------------------------------
-
         # column names
-        self.columns = [ticker + ' Return' for ticker in self.tickers]
+        self.columns = [ticker + '_RET' for ticker in self.tickers]
         
-        # format and merge
-        self.stock1 = self.D.loc[self.D['ticker']==self.ticker1,['date','ret']]
-
         # statistics
-        Sigma = D.cov().to_numpy()
+        self.mu = self.X[self.columns].mean().to_numpy()
+        Sigma = self.X[self.columns].cov().to_numpy()
         
         # pre-processing for efficient frontier
-        z = np.zeros((4,1))
-        o = np.ones((4,1))
-        A = np.block([
-            [self.Sigma,self.mu,o],
-            [mu.transpose(),z,z],
-            [o.transpose(),z,z]])
+        n = len(tickers)
+        z = np.zeros((n,1))
+        o = np.ones((n,1))
+
+        print(Sigma.shape)
+        print(self.mu.shape)
+        print(o.shape)
+        if False:
+            A = np.block([
+                [Sigma,self.mu,o],
+                [self.mu.transpose(),0.,0.],
+                [o.transpose(),0.,0.]])
+
+        A = np.block([Sigma,self.mu,o])
+
+        #self.lu, self.piv = lu_factor(A)
 
         # tangency portfolio
         tangency_mean = 1.
@@ -100,8 +106,9 @@ class Portfolio:
     def __str__(self):
         pass
 
-    def frontier(self,mu_port,efficient=False):
-        return sigma, x_star
+    def x_ef(self,mu_port,efficient=False):
+        rhs = np.block([0.,self.mu,1.])
+        return lu_solve((self.lu,self.piv),rhs)[:-2]
 
     def risk_return_plot(self,n_plot=100,cml=True,cal=True,sys_ido=True,
         efficient_frontier=True,market=False):
