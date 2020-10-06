@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from famafrench import FamaFrench
 from scipy.optimize import minimize_scalar
-from scipy.linalg import lu, lu_solve
+from scipy.linalg import lu_factor, lu_solve
 from alpha_vantage.timeseries import TimeSeries
 
 font = {'family' : 'normal', 'size' : 12}
@@ -79,36 +79,32 @@ class Portfolio:
         
         # statistics
         self.mu = self.X[self.columns].mean().to_numpy()
-        Sigma = self.X[self.columns].cov().to_numpy()
+        self.mu = np.matrix(self.mu).T
+        self.Sigma = self.X[self.columns].cov().to_numpy()
         
         # pre-processing for efficient frontier
-        n = len(tickers)
-        z = np.zeros((n,1))
-        o = np.ones((n,1))
+        self.n = len(tickers)
+        self.z = np.zeros((self.n,1))
+        self.o = np.ones((self.n,1))
 
-        print(Sigma.shape)
-        print(self.mu.shape)
-        print(o.shape)
-        if False:
-            A = np.block([
-                [Sigma,self.mu,o],
-                [self.mu.transpose(),0.,0.],
-                [o.transpose(),0.,0.]])
+        A = np.block([
+            [self.Sigma,self.mu,self.o],
+            [self.mu.transpose(),0.,0.],
+            [self.o.transpose(),0.,0.]])
 
-        A = np.block([Sigma,self.mu,o])
-
-        #self.lu, self.piv = lu_factor(A)
-
-        # tangency portfolio
-        tangency_mean = 1.
-        tangency_stdv = 1.
+        self.lu, self.piv = lu_factor(A)
 
     def __str__(self):
         pass
 
     def x_ef(self,mu_port,efficient=False):
-        rhs = np.block([0.,self.mu,1.])
-        return lu_solve((self.lu,self.piv),rhs)[:-2]
+        rhs = np.block([self.o.T,mu_port,1.]).T
+        x = lu_solve((self.lu,self.piv),rhs)[:-2]
+        s = x.dot(self.Sigma.dot(x))
+        return x, s
+
+    def sigma_ef(self,mu_port,efficient=False):
+        return np.sqrt(self.Sigma)
 
     def risk_return_plot(self,n_plot=100,cml=True,cal=True,sys_ido=True,
         efficient_frontier=True,market=False):
