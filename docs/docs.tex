@@ -2,17 +2,6 @@
 \usepackage{amsmath,amssymb,fullpage,setspace}
 \begin{document}
 	\onehalfspacing
-\section{Two Asset Case}
-	Consider two stocks, $A$ and $B$. You plan to invest a fraction $x$ in $A$ and $1-x$ in $B$. $A$ and $B$ have mean returns $\mu_{A}$ and $\mu_{B}$. 
-	\begin{align}
-		\mu_{P}&=x\mu_{A}+(1-x)\mu_{B}\\
-		\sigma_{P}^{2}&=x^{2}\sigma_{A}^{2}+(1-x)^{2}\sigma_{B}^{2}+2x(1-x)\sigma_{AB}
-	\end{align}
-	and hence
-	\begin{align}
-		\sigma_{P}^{2}&=\left[\frac{\mu_{P}-\mu_{B}}{\mu_{A}-\mu_{B}}\right]^{2}\sigma_{A}^{2}+\left[\frac{\mu_{A}-\mu_{P}}{\mu_{A}-\mu_{B}}\right]^{2}\sigma_{B}^{2}+2\left[\frac{\mu_{P}-\mu_{B}}{\mu_{A}-\mu_{B}}\right]\left[\frac{\mu_{A}-\mu_{P}}{\mu_{A}-\mu_{B}}\right]\sigma_{AB}\\
-	\end{align}
-\section{$N$-Asset Case}
 	Suppose the returns of $N\geq1$ assets are normally distributed with mean $\mu\in\mathbb{R}^{N}$ and covariance $\Sigma\in\mathbb{R}^{N\times N}$. Fix, for the moment, the desired return $\mu_{P}$. For each portfolio $x\in\mathbb{R}^{N}$, we require that $\mu'x=\mu_{P}$ and $\mathbf{1}'x=w_{P}$. Let $\sigma_{P}^{2}(x)$ denote the variance of its returns: $\sigma_{P}^{2}(x)=x'\Sigma x$. The investor's problem is to choose the minimum-variance portfolio subject to it earning a return of $\mu_{P}$. 
 \begin{equation}
 	\begin{array}{rl}
@@ -46,6 +35,4 @@ w_{\mathbf{1}}
 \end{array}
 \right]
 \end{equation}
-The tangency portfolio is given by
-
 \end{document}

@@ -9,6 +9,14 @@ from alpha_vantage.timeseries import TimeSeries
 
 font = {'family' : 'normal', 'size' : 12}
 
+class Stock:
+
+    def __init__(self,ticker):
+        self.ticker = ticker
+        self.sys = None # fraction of risk that's systematic
+        self.div = None # dividend yield
+        self.cap = None # capital gain rate
+
 class Portfolio:
 
     def __init__(self,key,tickers,dow=False):
@@ -64,12 +72,29 @@ class Portfolio:
             opts = {'left_index' : True, 'right_index' : True}
             X = X.merge(tick_dat,**opts)
 
-        # compute returns
+        # compute returns 
         for t in tickers:
             X[t+'_RET'] = (X[t+'_PRC']+X[t+'_DIV'])/X[t+'_PRC'].shift()-1.
+            X[t+'_DY'] = X[t+'_DIV']/X[t+'_PRC'].shift()
+            X[t+'_CG'] = X[t+'_PRC']/X[t+'_PRC'].shift()-1.
+
+        # drop
+        X.to_csv('_'.join(tickers) + '.csv')        
 
         # kill the first row (with the NAs)
         X = X.loc[X.index[1:],]
+
+        # compute stats
+        self.stocks = {}
+        for t in tickers:
+            _stock = Stock(t)
+            _stock.sys = X[['Mkt-RF',t+'_RET']].corr().loc['Mkt-RF',t+'_RET']
+            _stock.idi = 1.-_stock.sys
+            _stock.div = float(X[t+'_DY'].mean())
+            _stock.cap = float(X[t+'_CG'].mean())
+            _stock.exp = float(X[t+'_RET'].mean())
+            _stock.vol = float(X[t+'_RET'].std(exp))
+            self.stocks[t] = _stock
 
         # store
         self.X = X
@@ -94,17 +119,18 @@ class Portfolio:
 
         self.lu, self.piv = lu_factor(A)
 
+        @np.vectorize
+        def _ef(mu_port):
+            rhs = np.block([self.o.T,mu_port,1.]).T
+            x = lu_solve((self.lu,self.piv),rhs)[:-2]
+            s = x.T@(self.Sigma@x)
+            return np.sqrt(s[0])
+
+        self._ef = _ef
+        self.sr_tan = 1.
+
     def __str__(self):
         pass
-
-    def x_ef(self,mu_port,efficient=False):
-        rhs = np.block([self.o.T,mu_port,1.]).T
-        x = lu_solve((self.lu,self.piv),rhs)[:-2]
-        s = x.dot(self.Sigma.dot(x))
-        return x, s
-
-    def sigma_ef(self,mu_port,efficient=False):
-        return np.sqrt(self.Sigma)
 
     def risk_return_plot(self,n_plot=100,cml=True,cal=True,sys_ido=True,
         efficient_frontier=True,market=False):
