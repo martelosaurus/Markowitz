@@ -19,7 +19,7 @@ class Stock:
 
 class Portfolio:
 
-    def __init__(self,key,tickers,dow=False):
+    def __init__(self,key,tickers,dow=False,spy=True):
         """
         Initializes Portfolio object
 
@@ -45,10 +45,14 @@ class Portfolio:
         if dow:
             pass
         self.tickers = tickers
+        if spy:
+            tickers.append('SPY')
 
         # load data
         ts = TimeSeries(key, output_format = "pandas")
-        X = FamaFrench().get_monthly()
+        X = None
+        if not spy:
+            X = FamaFrench().get_monthly()
 
         # loop over tickers
         for ticker in tickers:
@@ -68,18 +72,26 @@ class Portfolio:
             # reformat date
             tick_dat.index = 100*tick_dat.index.year+tick_dat.index.month
 
+            print(tick_dat)
+
             # meger to X list
             opts = {'left_index' : True, 'right_index' : True}
-            X = X.merge(tick_dat,**opts)
+            if spy:
+                if X is None:
+                    X = tick_dat.iloc[::-1]
+                else:
+                    X = X.merge(tick_dat,**opts)
+            else:
+                X = X.merge(tick_dat,**opts)
+
+        # drop
+        X.to_csv('_'.join(tickers) + '.csv')        
 
         # compute returns 
         for t in tickers:
             X[t+'_RET'] = (X[t+'_PRC']+X[t+'_DIV'])/X[t+'_PRC'].shift()-1.
             X[t+'_DY'] = X[t+'_DIV']/X[t+'_PRC'].shift()
             X[t+'_CG'] = X[t+'_PRC']/X[t+'_PRC'].shift()-1.
-
-        # drop
-        X.to_csv('_'.join(tickers) + '.csv')        
 
         # kill the first row (with the NAs)
         X = X.loc[X.index[1:],]
@@ -88,12 +100,13 @@ class Portfolio:
         self.stocks = {}
         for t in tickers:
             _stock = Stock(t)
-            _stock.sys = X[['Mkt-RF',t+'_RET']].corr().loc['Mkt-RF',t+'_RET']
+            #_stock.sys = X[['Mkt-RF',t+'_RET']].corr().loc['Mkt-RF',t+'_RET']
+            _stock.sys = X[['SPY_RET',t+'_RET']].corr().loc['SPY_RET',t+'_RET']
             _stock.idi = 1.-_stock.sys
             _stock.div = float(X[t+'_DY'].mean())
             _stock.cap = float(X[t+'_CG'].mean())
             _stock.exp = float(X[t+'_RET'].mean())
-            _stock.vol = float(X[t+'_RET'].std(exp))
+            _stock.vol = float(X[t+'_RET'].std())
             self.stocks[t] = _stock
 
         # store
