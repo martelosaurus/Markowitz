@@ -11,15 +11,23 @@ font = {'family' : 'normal', 'size' : 12}
 
 class Stock:
 
-	def __init__(self,ticker):
+	def __init__(self,ticker,hor=[1,5]):
+
+		"""
+		Parameters
+		----------
+		ticker : str
+			The stock's ticker
+		hor : (list of) int
+			Horizons (in years) over which to compute stats
+		"""
 		self.ticker = ticker
-		self.sys = None # fraction of risk that's systematic
-		self.div = None # dividend yield
-		self.cap = None # capital gain rate
+		self.hor = hor
+		self.stats 
 
 class Portfolio:
 
-	def __init__(self,key,tickers):
+	def __init__(self,key,tickers,rF=0.):
 		"""
 		Initializes Portfolio object
 
@@ -32,12 +40,17 @@ class Portfolio:
 			A list of tickers
 		dow : boolean
 			If True, loads tickers from the DIJA
+		rF : float
+			Risk-free rate
 
 		Examples
 		--------
 		"""	 
 
-		# load tickers
+		# rates
+		self.rF = rF
+
+		# load tickers and add SPY
 		self.tickers = tickers
 		tickers.append('SPY')
 		tickers.sort()
@@ -65,7 +78,7 @@ class Portfolio:
 			tick_dat.index = 100*tick_dat.index.year+tick_dat.index.month
 
 			# meger to X list
-			opts = {'left_index' : True, 'right_index' : True}
+			opts = {'how' : 'outer', 'left_index' : True, 'right_index' : True}
 			if X is None:
 				X = tick_dat.iloc[::-1]
 			else:
@@ -83,28 +96,70 @@ class Portfolio:
 		# kill the first row (with the NAs)
 		X = X.loc[X.index[1:],]
 
-		# compute stats
+		# store data frame
+		self.X = X
+
+		# ----------------------------------------------------------------------
+		# STOCK STATISTICS
+		def _stat(t,v,stat,V=None,p=True):
+			"""
+			Helper function 
+
+			Parameters
+			----------
+			t : str
+				Stock ticker
+			v : str
+				Variable (e.g. '_RET')
+			s : str
+				Statistic; must be "applicable" using pandas.DataFrame.apply
+			p : boolean
+				If True, multiplies result by 100 
+			V : str
+				Second variable 
+			"""
+			indx =  X.index[-h*12-2:-2]
+			stat = float(X.loc[indx,t+v].apply(s))
+			dick = {h : 100.*stat if p else stat for h in self.hor}
+			return pd.DataFrame(dick)
+
+		# loop over stocks in portfolio
 		self.stocks = {}
+		_mvol = _stat('SPY','_RET','std')			# market volatility
 		for t in tickers:
+
+			# initialize a new stock
 			_stock = Stock(t)
-			#_stock.sys = X[['Mkt-RF',t+'_RET']].corr().loc['Mkt-RF',t+'_RET']
-			_stock.sys = X[['SPY_RET',t+'_RET']].corr().loc['SPY_RET',t+'_RET']
-			_stock.idi = 1.-_stock.sys
-			_stock.div = float(X[t+'_DY'].mean())
-			_stock.cap = float(X[t+'_CG'].mean())
-			_stock.exp = float(X[t+'_RET'].mean())
-			_stock.vol = float(X[t+'_RET'].std())
+
+			# variance
+			_vars = float(X[t+'_RET'].std())
+			_corr = X[['SPY_RET',t+'_RET']].corr().loc['SPY_RET',t+'_RET']
+
+			# compute statistics
+			_stock.stats['sys'] = _corr				# percent sys risk
+			_stock.stats['idi'] = 1.-_stock.sys		# percent idiosyncratic risk
+			_stock.stats['div'] = _stat(t,'_DY','mean')# dividend yield
+			_stock.stats['cap'] = _stat(t,'_CG','mean')# capital gain rate
+			_stock.stats['exp'] = _stat(t,'_RET','mean')# expected return
+			_stock.stats['vol'] = _stat(t,'_RET','std')# volatility
+			_stock.stats['bet'] = np.sqrt(_vars/_varm)*_cor# beta
+
+			_stock.stats = S
+
+			# add stock to dictionary
 			self.stocks[t] = _stock
 
-		# store
-		self.X = X
+		# ----------------------------------------------------------------------
+		# PORTFOLIO STATISTICS
 
 		# column names
 		self.columns = [ticker + '_RET' for ticker in self.tickers]
-		
+
+		# correlation
+		self.corr = self.X[self.columns].corr()
+
 		# statistics
-		self.mu = self.X[self.columns].mean().to_numpy()
-		self.mu = np.matrix(self.mu).T
+		self.mu = np.matrix(self.X[self.columns].mean().to_numpy()).T
 		self.Sigma = self.X[self.columns].cov().to_numpy()
 		
 		# pre-processing for efficient frontier
@@ -112,28 +167,40 @@ class Portfolio:
 		self.z = np.zeros((self.n,1))
 		self.o = np.ones((self.n,1))
 
+		# matrix and its lu decomposition
 		A = np.block([
 			[self.Sigma,self.mu,self.o],
 			[self.mu.transpose(),0.,0.],
 			[self.o.transpose(),0.,0.]])
-
 		self.lu, self.piv = lu_factor(A)
 
+		# efficient frontier
 		@np.vectorize
 		def _ef(mu_port):
+			"""
+			Efficient frontier
+			
+			Parameters
+			----------
+			mu_port : float
+				Desired expected return
+			"""
 			rhs = np.block([self.o.T,mu_port,1.]).T
 			x = lu_solve((self.lu,self.piv),rhs)[:-2]
 			s = x.T@(self.Sigma@x)
 			return np.sqrt(s[0])
-
 		self._ef = _ef
+
+		# tangency portfolio
 		self.sr_tan = 1.
 
 	def __str__(self):
-		pass
+		"""prints statistics about the portfolio"""
+		_str = [str(h)+'-year stats:\n\n'+str(self.stocks[h]) for h in self.hor]
+		return '\n\n'.join(_str)
 
 	def risk_return_plot(self,n_plot=100,cml=True,cal=True,sys_ido=True,
-		efficient_frontier=True,market=False):
+		e_f=True,mkt=False):
 		"""
 		Under construction
 		
@@ -143,15 +210,15 @@ class Portfolio:
 			If True, draws the Capital Market Line (CML)
 		cal : boolean
 			If True, draws the Capital Allocation Line (CAL)
-		efficient_frontier : boolean
+		e_f : boolean
 			If True, draws the efficient frontier
-		systematic : boolean
+		sys : boolean
 			If True, draws the systematic vs. idiosyncratic risks
-		market : boolean
-			If True, plots the market return
+		mkt : boolean
+			If True, plots the mkt return
 		"""
 
-		if efficient_frontier:
+		if e_f:
 			pass
 		plt.plot(stdv_p,mean_p,'-')
 		plt.plot(self.stdv1,self.mean1,'ok')	
@@ -191,4 +258,3 @@ class Portfolio:
 		plt.title(title)  
 		plt.grid()
 		plt.show()
-

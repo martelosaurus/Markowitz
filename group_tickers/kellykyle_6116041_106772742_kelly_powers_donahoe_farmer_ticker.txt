@@ -1,0 +1,4 @@
+PENN
+AAPL
+DIS
+CAH
