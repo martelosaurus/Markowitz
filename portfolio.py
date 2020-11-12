@@ -91,24 +91,36 @@ class Portfolio:
 		"""
 		Parameters
 		----------
+		m : int
+			Month
 		h : int
 			Horizon (in years) over which to compute stats
-		"""
 
-		indx = X.index[-h*12-2:-2]
+		Returns
+		-------
+		_stat : pandas.DataFrame
+			DataFrame indexed by tickers containing various statistics
+		_corr :
+			Correlation table 
+		"""
 
 		# ----------------------------------------------------------------------
 		# PORTFOLIO STATISTICS
 
+		# subset
+		idx = self.X.index[-h*12-3:-3]
+		_X = self.X.loc[idx]
+
 		# statistics
-		self.mu = np.matrix(self.X[self.columns].mean().to_numpy()).T
-		self.Sigma = self.X[self.columns].cov().to_numpy()
+		self.mu = np.matrix(_X[self.columns].mean().to_numpy()).T
+		self.Sigma = _X[self.columns].cov().to_numpy()
 
 		# TODO: use .cov()
-		self._corr = self.X[self.columns]
+		_corr = _X[self.columns].corr()
+		_corr.index = self.tickers
 		
 		# pre-processing for efficient frontier
-		self.n = len(tickers)
+		self.n = len(self.tickers)
 		self.z = np.zeros((self.n,1))
 		self.o = np.ones((self.n,1))
 
@@ -135,7 +147,7 @@ class Portfolio:
 			s = x.T@(self.Sigma@x)
 			return np.sqrt(s[0])
 
-		def _stat(v,s,V=None,p=True):
+		def _apply(v,s):
 			"""
 			Helper function 
 
@@ -147,28 +159,35 @@ class Portfolio:
 				Statistic; must be "applicable" using pandas.DataFrame.apply
 			"""
 			cols = [ticker + v for ticker in self.tickers]
-			stat = X.loc[indx,cols].apply(s)
+			stat = _X[cols].apply(s)
 			stat.name = s # TODO: figure out the correct way of doing this
+			stat.index = self.tickers
 			return stat
 
-		# dividend yields and capital gain rates
-		_df['div'] = _stat(h,'_DY','mean')		# dividend yield
-		_df['cap'] = _stat(h,'_CG','mean')		# capital gain rate
-
 		# compute statistics
-		_df = {}
-		_df['sys'] = _corr.loc['RET_SPY']		# %systematic
-		_df['exp'] = _stat(h,'_RET','mean')		# expected return
-		_df['vol'] = _stat(h,'_RET','std')		# volatility
+		_stat = {}
+		_stat['sys'] = _corr['SPY_RET']						# %systematic
+		_stat['exp'] = _apply('_RET','mean')				# expected return
+		_stat['vol'] = _apply('_RET','std')					# volatility
+		_stat['div'] = _apply('_DY','mean')					# dividend yield
+		_stat['cap'] = _apply('_CG','mean')					# capital gain rate
 
-		_df = pd.DataFrame(_df)
+		_stat = pd.DataFrame(_stat)
 
 		# auxiliary
-		_df['idi'] = 1.-_df['sys']				# %idiosyncratic 
-		_df['bet'] = (_df['vol']/_mvol)*_corr 	# beta
+		_mvol = _stat.loc['SPY','vol']						# market volatility
+		_stat['idi'] = 1.-_stat['sys']						# %idiosyncratic 
+		_stat['bet'] = (_stat['vol']/_mvol)*_stat['sys'] 	# beta
+
+		# alpha
+		lm = self.X.index[-1]
+		t1 = self.X.loc[lm,self.columns]
+		t1.index = self.tickers
+		t2 = _stat['bet']*self.X.loc[lm,'SPY_RET'] 
+		_stat['alp'] = t1-t2
 
 		# drop it
-		return _df
+		return _stat, _corr, t1, t2
 
 	def __str__(self):
 		"""prints statistics about the portfolio"""
