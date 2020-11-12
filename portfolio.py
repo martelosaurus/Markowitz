@@ -87,61 +87,25 @@ class Portfolio:
 		# column names
 		self.columns = [ticker + '_RET' for ticker in self.tickers]
 
-		# ----------------------------------------------------------------------
-		# STOCK STATISTICS
-		def _stat(h,v,s,V=None,p=True):
-			"""
-			Helper function 
+	def summary(self,h=5):
+		"""
+		Parameters
+		----------
+		h : int
+			Horizon (in years) over which to compute stats
+		"""
 
-			Parameters
-			----------
-			h : int
-				Horizon (in years) over which to compute stats
-			v : str
-				Variable (e.g. '_RET')
-			s : str
-				Statistic; must be "applicable" using pandas.DataFrame.apply
-			"""
-			cols = [ticker + v for ticker in self.tickers]
-			indx = X.index[-h*12-2:-2]
-			stat = X.loc[indx,cols].apply(s)
-			if stat is 'corr':
-				stat = stat['SPY_RET']
-			stat.name = s # TODO: figure out the correct way of doing this
-			return stat
-
-		# loop over stocks in portfolio
-		self.stocks = {}
-		for h in self.hor:
-
-			# primitives
-			_corr = _stat(h,'_RET','corr')		
-
-			# compute statistics
-			_df = {}
-			_df['sys'] = _corr 						# %systematic
-			_df['idi'] = 1.-_df['sys']				# %idiosyncratic 
-			_df['div'] = _stat(h,'_DY','mean')		# dividend yield
-			_df['cap'] = _stat(h,'_CG','mean')		# capital gain rate
-			_df['exp'] = _stat(h,'_RET','mean')		# expected return
-			_df['vol'] = _stat(h,'_RET','std')		# volatility
-
-			# CAPM
-			#_volm = _df.loc['RET_SPY','vol']
-			#_df['bet'] = (_df['vol'])*_corr	# beta
-
-			# add to dictionary
-			self.stocks[h] = _df
+		indx = X.index[-h*12-2:-2]
 
 		# ----------------------------------------------------------------------
 		# PORTFOLIO STATISTICS
 
-		# correlation
-		self.corr = self.X[self.columns].corr()
-
 		# statistics
 		self.mu = np.matrix(self.X[self.columns].mean().to_numpy()).T
 		self.Sigma = self.X[self.columns].cov().to_numpy()
+
+		# TODO: use .cov()
+		self._corr = self.X[self.columns]
 		
 		# pre-processing for efficient frontier
 		self.n = len(tickers)
@@ -170,15 +134,45 @@ class Portfolio:
 			x = lu_solve((self.lu,self.piv),rhs)[:-2]
 			s = x.T@(self.Sigma@x)
 			return np.sqrt(s[0])
-		self._ef = _ef
 
-		# tangency portfolio
-		self.sr_tan = 1.
+		def _stat(v,s,V=None,p=True):
+			"""
+			Helper function 
+
+			Parameters
+			----------
+			v : str
+				Variable (e.g. '_RET')
+			s : str
+				Statistic; must be "applicable" using pandas.DataFrame.apply
+			"""
+			cols = [ticker + v for ticker in self.tickers]
+			stat = X.loc[indx,cols].apply(s)
+			stat.name = s # TODO: figure out the correct way of doing this
+			return stat
+
+		# dividend yields and capital gain rates
+		_df['div'] = _stat(h,'_DY','mean')		# dividend yield
+		_df['cap'] = _stat(h,'_CG','mean')		# capital gain rate
+
+		# compute statistics
+		_df = {}
+		_df['sys'] = _corr.loc['RET_SPY']		# %systematic
+		_df['exp'] = _stat(h,'_RET','mean')		# expected return
+		_df['vol'] = _stat(h,'_RET','std')		# volatility
+
+		_df = pd.DataFrame(_df)
+
+		# auxiliary
+		_df['idi'] = 1.-_df['sys']				# %idiosyncratic 
+		_df['bet'] = (_df['vol']/_mvol)*_corr 	# beta
+
+		# drop it
+		return _df
 
 	def __str__(self):
 		"""prints statistics about the portfolio"""
-		_str = [str(h)+'-year stats:\n\n'+str(self.stocks[h]) for h in self.hor]
-		return '\n\n'.join(_str)
+		pass
 
 	def risk_return_plot(self,n_plot=100,cml=True,cal=True,sys_ido=True,
 		e_f=True,mkt=False):
