@@ -9,25 +9,9 @@ from alpha_vantage.timeseries import TimeSeries
 
 font = {'family' : 'normal', 'size' : 12}
 
-class Stock:
-
-	def __init__(self,ticker,hor=[1,5]):
-
-		"""
-		Parameters
-		----------
-		ticker : str
-			The stock's ticker
-		hor : (list of) int
-			Horizons (in years) over which to compute stats
-		"""
-		self.ticker = ticker
-		self.hor = hor
-		self.stats 
-
 class Portfolio:
 
-	def __init__(self,key,tickers,rF=0.):
+	def __init__(self,key,tickers,rF=0.,hor=[1,5]):
 		"""
 		Initializes Portfolio object
 
@@ -49,6 +33,7 @@ class Portfolio:
 
 		# rates
 		self.rF = rF
+		self.hor = hor
 
 		# load tickers and add SPY
 		self.tickers = tickers
@@ -99,61 +84,57 @@ class Portfolio:
 		# store data frame
 		self.X = X
 
+		# column names
+		self.columns = [ticker + '_RET' for ticker in self.tickers]
+
 		# ----------------------------------------------------------------------
 		# STOCK STATISTICS
-		def _stat(t,v,stat,V=None,p=True):
+		def _stat(h,v,s,V=None,p=True):
 			"""
 			Helper function 
 
 			Parameters
 			----------
-			t : str
-				Stock ticker
+			h : int
+				Horizon (in years) over which to compute stats
 			v : str
 				Variable (e.g. '_RET')
 			s : str
 				Statistic; must be "applicable" using pandas.DataFrame.apply
-			p : boolean
-				If True, multiplies result by 100 
-			V : str
-				Second variable 
 			"""
-			indx =  X.index[-h*12-2:-2]
-			stat = float(X.loc[indx,t+v].apply(s))
-			dick = {h : 100.*stat if p else stat for h in self.hor}
-			return pd.DataFrame(dick)
+			cols = [ticker + v for ticker in self.tickers]
+			indx = X.index[-h*12-2:-2]
+			stat = X.loc[indx,cols].apply(s)
+			if stat is 'corr':
+				stat = stat['SPY_RET']
+			stat.name = s # TODO: figure out the correct way of doing this
+			return stat
 
 		# loop over stocks in portfolio
 		self.stocks = {}
-		_mvol = _stat('SPY','_RET','std')			# market volatility
-		for t in tickers:
+		for h in self.hor:
 
-			# initialize a new stock
-			_stock = Stock(t)
-
-			# variance
-			_vars = float(X[t+'_RET'].std())
-			_corr = X[['SPY_RET',t+'_RET']].corr().loc['SPY_RET',t+'_RET']
+			# primitives
+			_corr = _stat(h,'_RET','corr')		
 
 			# compute statistics
-			_stock.stats['sys'] = _corr				# percent sys risk
-			_stock.stats['idi'] = 1.-_stock.sys		# percent idiosyncratic risk
-			_stock.stats['div'] = _stat(t,'_DY','mean')# dividend yield
-			_stock.stats['cap'] = _stat(t,'_CG','mean')# capital gain rate
-			_stock.stats['exp'] = _stat(t,'_RET','mean')# expected return
-			_stock.stats['vol'] = _stat(t,'_RET','std')# volatility
-			_stock.stats['bet'] = np.sqrt(_vars/_varm)*_cor# beta
+			_df = {}
+			_df['sys'] = _corr 						# %systematic
+			_df['idi'] = 1.-_df['sys']				# %idiosyncratic 
+			_df['div'] = _stat(h,'_DY','mean')		# dividend yield
+			_df['cap'] = _stat(h,'_CG','mean')		# capital gain rate
+			_df['exp'] = _stat(h,'_RET','mean')		# expected return
+			_df['vol'] = _stat(h,'_RET','std')		# volatility
 
-			_stock.stats = S
+			# CAPM
+			#_volm = _df.loc['RET_SPY','vol']
+			#_df['bet'] = (_df['vol'])*_corr	# beta
 
-			# add stock to dictionary
-			self.stocks[t] = _stock
+			# add to dictionary
+			self.stocks[h] = _df
 
 		# ----------------------------------------------------------------------
 		# PORTFOLIO STATISTICS
-
-		# column names
-		self.columns = [ticker + '_RET' for ticker in self.tickers]
 
 		# correlation
 		self.corr = self.X[self.columns].corr()
