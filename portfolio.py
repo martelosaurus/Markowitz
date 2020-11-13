@@ -86,7 +86,7 @@ class Portfolio:
 		# column names
 		self.columns = [ticker + '_RET' for ticker in self.tickers]
 
-	def summary(self,h=5):
+	def summary(self,h=60):
 		"""
 		Parameters
 		----------
@@ -107,7 +107,7 @@ class Portfolio:
 		# PORTFOLIO STATISTICS
 
 		# subset
-		idx = self.X.index[-h*12-2:-2]
+		idx = self.X.index[-h-2:-2]
 		_X = self.X.loc[idx]
 
 		# drop
