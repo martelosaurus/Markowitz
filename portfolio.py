@@ -2,7 +2,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-#from famafrench import FamaFrench
 from scipy.optimize import minimize_scalar
 from scipy.linalg import lu_factor, lu_solve
 from alpha_vantage.timeseries import TimeSeries
@@ -108,8 +107,11 @@ class Portfolio:
 		# PORTFOLIO STATISTICS
 
 		# subset
-		idx = self.X.index[-h*12-3:-3]
+		idx = self.X.index[-h*12-2:-2]
 		_X = self.X.loc[idx]
+
+		# drop
+		_X.to_csv('_'.join(self.tickers) + '_JORDAN.csv')		
 
 		# statistics
 		self.mu = np.matrix(_X[self.columns].mean().to_numpy()).T
@@ -180,14 +182,14 @@ class Portfolio:
 		_stat['bet'] = (_stat['vol']/_mvol)*_stat['sys'] 	# beta
 
 		# alpha
-		lm = self.X.index[-1]
+		lm = self.X.index[-2]
 		t1 = self.X.loc[lm,self.columns]
 		t1.index = self.tickers
 		t2 = _stat['bet']*self.X.loc[lm,'SPY_RET'] 
 		_stat['alp'] = t1-t2
 
 		# drop it
-		return _stat, _corr, t1, t2
+		return _stat, _corr
 
 	def __str__(self):
 		"""prints statistics about the portfolio"""
