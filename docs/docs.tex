@@ -53,6 +53,22 @@ The investor's problem is to choose the minimum-variance portfolio subject to it
 \end{equation}
 \subsection{Examples}
 \subsubsection{Constant Risk}
-Suppose that $\Sigma=I$. 
-
+Suppose that $\Sigma=I$. Since $\mathbf{1}'\mathbf{1}=N$, 
+\begin{align}
+	D^{-1}&=\left(\mathbf{1}'\mathbf{1}\right)\left(m'm\right)-\left(m'\mathbf{1}\right)\left(\mathbf{1}'m\right)\\
+	&=N^{2}\left(\frac{m'm}{N}-\left(\frac{m'\mathbf{1}}{N}\right)^{2}\right)
+\end{align}
+so that
+\begin{align}
+	a(\mu)&=D\left(\mathbf{1}'\mathbf{1}\right)\mu-D\left(m'\mathbf{1}\right)\\
+	b(\mu)&=D\left(m'm\right)-D\left(\mathbf{1}'m\right)\mu
+\end{align}
+\subsection{$N\to\infty$}
+\begin{equation}
+	\begin{array}{rl}
+		&\min_{x\in\mathbb{R}}{\int_{-\infty}^{\infty}{\int_{-\infty}^{\infty}{x(i)x(j)\sigma(i,j)di}dj}}\\
+		\text{s.t. }&\int_{-\infty}^{\infty}{\mu(i)x(i)}=\mu_{0}\\
+		&\int_{-\infty}^{\infty}{x(i)di}=1
+	\end{array}
+\end{equation}
 \end{document}

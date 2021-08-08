@@ -1,5 +1,0 @@
-PEP
-PBR
-BAC
-IT
-CHTR
