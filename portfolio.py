@@ -8,25 +8,18 @@ from alpha_vantage.timeseries import TimeSeries
 
 font = {'family' : 'normal', 'size' : 12}
 
-# efficient frontier
 @np.vectorize
-def _ef(n,mu):
+def _ef(mp,A,S):
     """
-    Efficient frontier
+    mp : float
+        Desired portfolio mean return
+    """
     
-    Parameters
-    ----------
-    mu_port : float
-        Desired expected return
-    """
-    rhs = np.block([self.o.T,mu_port,1.]).T
-    x = lu_solve((self.lu,self.piv),rhs)[:-2]
-    s = x.T@(self.Sigma@x)
-    return np.sqrt(s[0])
+    return
 
 class Portfolio:
 
-    def __init__(self,key,tickers,rF=0.,hor=[1,5]):
+    def __init__(self,key,tickers,rF=0.,h=5,to_csv=True):
         """
         Initializes Portfolio object
 
@@ -50,7 +43,6 @@ class Portfolio:
 
         # rates
         self.rF = rF
-        self.hor = hor
 
         # load tickers and add SPY
         self.tickers = tickers
@@ -104,49 +96,35 @@ class Portfolio:
         # column names
         self.columns = [ticker + '_RET' for ticker in self.tickers]
 
-    def summary(self,h=60,to_csv=False):
-        """
-        Parameters
-        ----------
-        m : int
-            Month
-        h : int
-            Horizon (in years) over which to compute stats
-
-        Returns
-        -------
-        _stat : pandas.DataFrame
-            DataFrame indexed by tickers containing various statistics
-        _corr :
-            Correlation table 
-        """
-
-        # -------------------------------------------------------------------
-        # PORTFOLIO STATISTICS
-
         # subset
         idx = self.X.index[-h-2:-2]
-        _X = self.X.loc[idx]
+        self.X = self.X.loc[idx]
 
         # drop
         if to_csv:
-            _X.to_csv('_'.join(self.tickers) + '_JORDAN.csv')        
+            self.X.to_csv('_'.join(self.tickers) + '_JORDAN.csv')        
 
         # statistics
-        self.mu = np.matrix(_X[self.columns].mean().to_numpy()).T
-        self.Sigma = _X[self.columns].cov().to_numpy()
-
-        # TODO: use .cov()
-        _corr = _X[self.columns].corr()
-        _corr.index = self.tickers
-        
-        # pre-processing for efficient frontier
-        self.n = len(self.tickers)
-        self.z = np.zeros((self.n,1))
-        self.o = np.ones((self.n,1))
+        self.m = self.X[self.columns].mean().to_numpy()
+        self.S = self.X[self.columns].cov().to_numpy()
 
         # matrix and its lu decomposition
-        self.lu, self.piv = lu_factor(self.Sigma)
+        self.N = len(self.tickers)
+        lu, piv = lu_factor(self.S)
+        self.Si1 = lu_solve((lu,piv),np.ones(self.N))
+        self.Sim = lu_solve((lu,piv),self.m)
+        a11 = np.ones(self.N)@self.Si1
+        a21 = self.m@self.Si1
+        a22 = self.m@self.Sim
+        self.A = np.array([[a11,a21],[a21,a22]])
+
+        # tangency portfolio
+
+    def summary(self):
+
+        # TODO: use .cov()
+        _corr = self.X[self.columns].corr()
+        _corr.index = self.tickers
 
         def _apply(v,s):
             """
@@ -160,7 +138,7 @@ class Portfolio:
                 Statistic; must be "applicable" using pandas.DataFrame.apply
             """
             cols = [ticker + v for ticker in self.tickers]
-            stat = _X[cols].apply(s)
+            stat = self.X[cols].apply(s)
             stat.name = s # TODO: figure out the correct way of doing this
             stat.index = self.tickers
             return stat
@@ -187,8 +165,11 @@ class Portfolio:
         t2 = _stat['bet']*self.X.loc[lm,'SPY_RET'] 
         _stat['alp'] = t1-t2
 
+        # tangency portfolio
+        _tanp = 1
+
         # drop it
-        return _stat, _corr
+        return _stat, _corr, _tanp
 
     def plot(self,n_plot=100,cml=True,cal=None,risk=None,ef=True):
         """
@@ -209,7 +190,7 @@ class Portfolio:
 
         # efficient frontier
         if ef:
-            plt.plot(_ef(mu_plt,self.lu,self.piv),mu_plt)
+            plt.plot(_ef(mu_plt,self.S,self.A),mu_plt)
 
         # tickers to plot
         if ticks:
@@ -227,12 +208,14 @@ class Portfolio:
             plt.annotate('Portfolio',(P.stdv_p,P.mean_p))
 
         # capital allocation line for portfolio 'x'
-        if cal: 
-            cal(x)
+        if False:
+            if cal: 
+                cal(x)
 
         # capital market line
-        if cml:
-            cal(x_tan)
+        if False:
+            if cml:
+                cal(x_tan)
 
         # plot the portfolio
         if port:

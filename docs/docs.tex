@@ -3,72 +3,56 @@
 \begin{document}
 	\onehalfspacing
 \section{Markowitz}
-	Suppose the returns of $N\geq1$ assets are normally distributed with mean $\mu\in\mathbb{R}^{N}$ and covariance $\Sigma\in\mathbb{R}^{N\times N}$. By definition, $\Sigma$ is symmetric positive definite. Fix, for the moment, the desired return $\mu_{P}$. For each portfolio $x\in\mathbb{R}^{N}$, we require that $\mu'x=\mu_{P}$ and $\mathbf{1}'x=w_{P}$. Let $\sigma_{P}^{2}(x)$ denote the variance of its returns: $\sigma_{P}^{2}(x)=x'\Sigma x$. The investor's problem is to choose the minimum-variance portfolio subject to it earning a return of $\mu_{P}$. 
+	Suppose the returns of $N\geq1$ assets are normally distributed with mean $\mu\in\mathbb{R}^{N}$ and covariance $\Sigma\in\mathbb{R}^{N\times N}$. By definition, $\Sigma$ is symmetric positive definite. Fix, for the moment, the desired return $\mu$. For each portfolio $x\in\mathbb{R}^{N}$, we require that $\mathbf{1}'x=1$ and $\mu'x=\mu$. Let $\sigma_{P}^{2}(x)$ denote the variance of its returns: $\sigma_{P}^{2}(x)=x'\Sigma x$. The investor's problem is to choose the minimum-variance portfolio subject to it earning a return of $\mu$. 
 \begin{equation}
-	\begin{array}{rl}
-		&\min_{x\in\mathbb{R}}\sigma_{P}^{2}(x)\\
-		\text{s.t. }&m'x=\mu\\
-		&\mathbf{1}'x=1
+	\begin{array}{lrl}
+		&&\min_{x\in\mathbb{R}}\frac{1}{2}\sigma_{P}^{2}(x)\\
+		\text{s.t. }&a:&\mathbf{1}'x=1\\
+		&b:&m'x=\mu
 	\end{array}
 \end{equation}
-Let $a(\mu)$ and $b(\mu)$ denote the Lagrange multipliers of the constraints $m'x=\mu$ and $\mathbf{1}'x=1$ respectively. The first-order condition is
+Let $a$ and $b$ denote the Lagrange multipliers of the constraints $m'x=\mu$ and $\mathbf{1}'x=1$ respectively. The first-order condition is
 \begin{equation}
-	0=\Sigma x-a(\mu)m-b(\mu)\mathbf{1}
+	0=\Sigma x-a\mathbf{1}-bm
 \end{equation}
 which implies that
 \begin{equation}
-	x^{\circ}=a(\mu)\Sigma^{-1}m+b(\mu)\Sigma^{-1}\mathbf{1}
+	x^{\circ}=a\Sigma^{-1}\mathbf{1}+b\Sigma^{-1}m
 \end{equation}
-and hence
+Let $A$ be the $2\times2$ matrix with elements 
 \begin{align}
-	\mu&=a(\mu)\left(m'\Sigma^{-1}m\right)+b(\mu)\left(m'\Sigma^{-1}\mathbf{1}\right)\\
-	1&=a(\mu)\left(\mathbf{1}'\Sigma^{-1}m\right)+b(\mu)\left(\mathbf{1}'\Sigma^{-1}\mathbf{1}\right)
-\end{align}
-Define
-\begin{equation}
-	D^{-1}=\left(\mathbf{1}'\Sigma^{-1}\mathbf{1}\right)\left(m'\Sigma^{-1}m\right)-\left(m'\Sigma^{-1}\mathbf{1}\right)\left(\mathbf{1}'\Sigma^{-1}m\right)
-\end{equation}
-so that
-\begin{align}
-	a(\mu)&=D\left(\mathbf{1}'\Sigma^{-1}\mathbf{1}\right)\mu-D\left(m'\Sigma^{-1}\mathbf{1}\right)\\
-	b(\mu)&=D\left(m'\Sigma^{-1}m\right)-D\left(\mathbf{1}'\Sigma^{-1}m\right)\mu
+	[A]_{1,1}&=\mathbf{1}'\Sigma^{-1}\mathbf{1}\\
+	[A]_{1,2}&=\mathbf{1}'\Sigma^{-1}m\\
+	[A]_{2,1}&=m'\Sigma^{-1}\mathbf{1}\\
+	[A]_{2,2}&=m'\Sigma^{-1}m
 \end{align}
 Therefore,
 \begin{align}
-	s_{P}(\mu)&\equiv\sqrt{\sigma_{P}(x^{\circ}(\mu))}\\
-	&=\sqrt{x^{\circ}(\mu)'\Sigma x^{\circ}(\mu)}
+	s_{P}^{2}(\mu)&=x^{\circ}(\mu)'\Sigma x^{\circ}(\mu)
 \end{align}
 The security market line is 
 \begin{equation}
 	\sigma_{T}(\mu)=r_F+\beta\mu
 \end{equation}
 $\mu^{*}$ and $\beta^{*}$ satisfy $s_{P}(\mu^{*})=\sigma_{T}(\mu^{*})$ and $s_{P}'(\mu^{*})=\sigma_{T}'(\mu^{*})$. 
-\subsection{Alternative}
-The investor's problem is to choose the minimum-variance portfolio subject to it earning a return of $\mu_{P}$. 
-\begin{equation}
-	\begin{array}{rl}
-		&\max_{x\in\mathbb{R}}\frac{m'x-r_{F}}{\sqrt{\sigma_{P}^{2}(x)}}\\
-		\text{s.t. }&\mathbf{1}'x=1\\
-	\end{array}
-\end{equation}
-\subsection{Examples}
-\subsubsection{Constant Risk}
-Suppose that $\Sigma=I$. Since $\mathbf{1}'\mathbf{1}=N$, 
 \begin{align}
-	D^{-1}&=\left(\mathbf{1}'\mathbf{1}\right)\left(m'm\right)-\left(m'\mathbf{1}\right)\left(\mathbf{1}'m\right)\\
-	&=N^{2}\left(\frac{m'm}{N}-\left(\frac{m'\mathbf{1}}{N}\right)^{2}\right)
-\end{align}
-so that
-\begin{align}
-	a(\mu)&=D\left(\mathbf{1}'\mathbf{1}\right)\mu-D\left(m'\mathbf{1}\right)\\
-	b(\mu)&=D\left(m'm\right)-D\left(\mathbf{1}'m\right)\mu
-\end{align}
-\subsection{$N\to\infty$}
-\begin{equation}
-	\begin{array}{rl}
-		&\min_{x\in\mathbb{R}}{\int_{-\infty}^{\infty}{\int_{-\infty}^{\infty}{x(i)x(j)\sigma(i,j)di}dj}}\\
-		\text{s.t. }&\int_{-\infty}^{\infty}{\mu(i)x(i)}=\mu_{0}\\
-		&\int_{-\infty}^{\infty}{x(i)di}=1
+	\sigma_{P}^{2}(x^{\circ}(\mu))=
+	(1,\mu)
+	\left(
+	\begin{array}{cc}
+		\mathbf{1}'\Sigma^{-1}\mathbf{1} & \mathbf{1}'\Sigma^{-1}m\\
+		m'\Sigma^{-1}\mathbf{1} & m'\Sigma^{-1}m
 	\end{array}
+	\right)^{-1}
+	\left(
+	\begin{array}{c}
+		1\\
+		\mu
+	\end{array}
+	\right)
+\end{align}
+Finally, we compute the mean of the tangency portfolio:
+\begin{equation}
+	\max_{\mu}\frac{\mu-r_{F}}{\sqrt{\sigma_{P}^{2}(x^{\circ}(\mu))}}
 \end{equation}
 \end{document}
